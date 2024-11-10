@@ -35,14 +35,14 @@ app.get("/api/info", async (req, res) => {
 });
 
 // ============ Get Person by ID ==========
-app.get("/api/persons/:id", (req, res) => {
+app.get("/api/persons/:id", (req, res, next) => {
   newPerson
     .findById(req.params.id)
     .then((note) => {
       if (note) {
         res.json(note);
       } else {
-        res.status(404).json({ error: "No such note!" });
+        res.status(404).json({ error: "No such Name!" });
       }
     })
     .catch((error) => res.status(400).json({ error: "Malformatted ID" }));
@@ -63,12 +63,8 @@ const generateId = () => {
 };
 
 // =========== Create a new Person ==========
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
   const { name, number } = req.body;
-
-  if (!name) {
-    return res.status(400).json({ error: "Name is required!" });
-  }
 
   const newNum = new newPerson({
     name,
@@ -77,8 +73,10 @@ app.post("/api/persons", (req, res) => {
 
   newNum
     .save()
-    .then((savedNote) => res.status(201).json(savedNote))
-    .catch((error) => res.status(400).json({ error: "Error saving person" }));
+    .then((savedNote) => res.json(savedNote))
+    .catch((error) => {
+      next(error);
+    });
 });
 // ========== Update already Person =============
 app.put("/api/persons/:id", (req, res, next) => {
@@ -104,7 +102,10 @@ const errorHandler = (error, req, res, next) => {
   console.log(error.message);
 
   if (error.name === "CastError") {
-    return res.status(400).send({ error: "malformatted id4" });
+    return res.status(400).send({ error: "malformatted id" });
+  }
+  if (error.name === "ValidationError") {
+    console.error("Validation error:", error.message);
   }
   next(error);
 };
